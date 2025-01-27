@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-var optionNoSuchElement = fmt.Errorf("no such element")
+var erroOptionNoSuchElement = fmt.Errorf("no such element")
 
 // Some builds an Option when value is present.
 // Play: https://go.dev/play/p/iqz2n9n0tDM
@@ -104,7 +104,7 @@ func (o Option[T]) Get() (T, bool) {
 // Play: https://go.dev/play/p/RVBckjdi5WR
 func (o Option[T]) MustGet() T {
 	if !o.isPresent {
-		panic(optionNoSuchElement)
+		panic(erroOptionNoSuchElement)
 	}
 
 	return o.value
@@ -133,6 +133,13 @@ func (o Option[T]) ForEach(onValue func(value T)) {
 	}
 }
 
+func MatchOption[T any, R any](o Option[T], onValue func(value T) (R, bool), onNone func() (R, bool)) Option[R] {
+	if o.isPresent {
+		return TupleToOption(onValue(o.value))
+	}
+	return TupleToOption(onNone())
+}
+
 // Match executes the first function if value is present and second function if absent.
 // It returns a new Option.
 // Play: https://go.dev/play/p/1V6st3LDJsM
@@ -141,6 +148,14 @@ func (o Option[T]) Match(onValue func(value T) (T, bool), onNone func() (T, bool
 		return TupleToOption(onValue(o.value))
 	}
 	return TupleToOption(onNone())
+}
+
+func MapOption[T any, R any](o Option[T], mapper func(value T) (R, bool)) Option[R] {
+	if o.isPresent {
+		return TupleToOption(mapper(o.value))
+	}
+
+	return None[R]()
 }
 
 // Map executes the mapper function if value is present or returns None if absent.
@@ -161,6 +176,14 @@ func (o Option[T]) MapNone(mapper func() (T, bool)) Option[T] {
 	}
 
 	return TupleToOption(mapper())
+}
+
+func FlatMapOption[T any, R any](o Option[T], mapper func(value T) Option[R]) Option[R] {
+	if o.isPresent {
+		return mapper(o.value)
+	}
+
+	return None[R]()
 }
 
 // FlatMap executes the mapper function if value is present or returns None if absent.
@@ -314,7 +337,7 @@ func (o Option[T]) Value() (driver.Value, error) {
 //nolint:unused
 func (o Option[T]) leftValue() error {
 	if !o.isPresent {
-		return optionNoSuchElement
+		return erroOptionNoSuchElement
 	}
 	return nil
 }

@@ -525,7 +525,7 @@ func TestOptionFoldFailure(t *testing.T) {
 	}
 
 	folded := Fold[error, int, string](option, successFunc, failureFunc)
-	expected := fmt.Sprintf("Failure: %v", optionNoSuchElement)
+	expected := fmt.Sprintf("Failure: %v", erroOptionNoSuchElement)
 
 	is.Equal(expected, folded)
 }

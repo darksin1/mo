@@ -208,6 +208,36 @@ func ExampleOption_ToPointer_none() {
 	// Output: <nil>
 }
 
+func ExampleMatchOption_some() {
+	some := Some(42)
+	result := MatchOption(some,
+		func(i int) (string, bool) {
+			return "zero", false
+		},
+		func() (string, bool) {
+			return "two", true
+		},
+	)
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: false
+}
+
+func ExampleMatchOption_none() {
+	none := None[int]()
+	result := MatchOption(none,
+		func(i int) (string, bool) {
+			return "zero", false
+		},
+		func() (string, bool) {
+			return "two", true
+		},
+	)
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: true two
+}
+
 func ExampleOption_Match_some() {
 	some := Some(42)
 	result := some.Match(
@@ -236,6 +266,26 @@ func ExampleOption_Match_none() {
 
 	fmt.Println(result.IsPresent(), result.OrEmpty())
 	// Output: true 2
+}
+
+func ExampleMapOption_some() {
+	some := Some(42)
+	result := MapOption(some, func(i int) (string, bool) {
+		return "1234", true
+	})
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: true 1234
+}
+
+func ExampleMapOption_none() {
+	none := None[int]()
+	result := MapOption(none, func(i int) (string, bool) {
+		return "1234", true
+	})
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: false
 }
 
 func ExampleOption_Map_some() {
@@ -276,6 +326,26 @@ func ExampleOption_MapNone_none() {
 
 	fmt.Println(result.IsPresent(), result.OrEmpty())
 	// Output: true 1234
+}
+
+func ExampleFlatMapOption_some() {
+	some := Some(42)
+	result := FlatMapOption(some, func(i int) Option[string] {
+		return Some("21")
+	})
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: true 21
+}
+
+func ExampleFlatMapOption_none() {
+	none := None[int]()
+	result := FlatMapOption(none, func(i int) Option[string] {
+		return Some("21")
+	})
+
+	fmt.Println(result.IsPresent(), result.OrEmpty())
+	// Output: false
 }
 
 func ExampleOption_FlatMap_some() {
