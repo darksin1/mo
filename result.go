@@ -31,6 +31,29 @@ func Errf[T any](format string, a ...any) Result[T] {
 	return Err[T](fmt.Errorf(format, a...))
 }
 
+// Maps a Result[T] to a Result[R] using the given function that returns R.
+func MapResult[T any, R any](r Result[T], mapper func(T) (R, error)) Result[R] {
+	if !r.IsError() {
+		return TupleToResult(mapper(r.value))
+	}
+	return Err[R](r.err)
+}
+
+// FlatMapResult maps a Result[T] to a Result[R] using the given function thtar returns Result[R].
+func FlatMapResult[T any, R any](r Result[T], mapper func(T) Result[R]) Result[R] {
+	if !r.IsError() {
+		return mapper(r.value)
+	}
+	return Err[R](r.err)
+}
+
+func MatchResult[T any, R any](r Result[T], onSuccess func(value T) (R, error), onError func(err error) (R, error)) Result[R] {
+	if r.isErr {
+		return TupleToResult(onError(r.err))
+	}
+	return TupleToResult(onSuccess(r.value))
+}
+
 // TupleToResult convert a pair of T and error into a Result.
 // Play: https://go.dev/play/p/KWjfqQDHQwa
 func TupleToResult[T any](value T, err error) Result[T] {

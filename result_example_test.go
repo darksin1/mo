@@ -33,6 +33,84 @@ func ExampleErrf() {
 	// Output: 1234 error
 }
 
+func ExampleMapResult_ok() {
+	ok := Ok(42)
+	result := MapResult(ok,
+		func(i int) (string, error) {
+			return "forty two", nil
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: false forty two <nil>
+}
+
+func ExampleMapResult_err() {
+	ko := Err[int](err)
+	result := MapResult(ko,
+		func(i int) (string, error) {
+			return "none", fmt.Errorf("map error")
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: true  error
+}
+
+func ExampleMapResult_mapError() {
+	ko := Ok(42)
+	result := MapResult(ko,
+		func(i int) (string, error) {
+			if i == 42 {
+				return "", fmt.Errorf("error")
+			}
+			return "none", nil
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: true  error
+}
+
+func ExampleFlatMapResult_ok() {
+	ok := Ok(42)
+	result := FlatMapResult(ok,
+		func(i int) Result[string] {
+			return Ok("forty two")
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: false forty two <nil>
+}
+
+func ExampleFlatMapResult_err() {
+	ko := Err[int](err)
+	result := FlatMapResult(ko,
+		func(i int) Result[string] {
+			return Ok("none")
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: true  error
+}
+
+func ExampleFlatMapResult_mapError() {
+	ko := Ok(42)
+	result := FlatMapResult(ko,
+		func(i int) Result[string] {
+			if i == 42 {
+				return Err[string](fmt.Errorf("error"))
+			}
+			return Ok("none")
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: true  error
+}
+
 func ExampleTupleToResult() {
 	randomFunc := func() (int, error) {
 		return 42, err
@@ -243,6 +321,36 @@ func ExampleResult_ToEither_err() {
 	// true false
 	// error
 	// 0
+}
+
+func ExampleMatchResult_ok() {
+	ok := Ok(42)
+	result := MatchResult(ok,
+		func(i int) (string, error) {
+			return "84", nil
+		},
+		func(err error) (string, error) {
+			return "21", nil
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: false 84 <nil>
+}
+
+func ExampleMatchResult_err() {
+	ko := Err[int](err)
+	result := MatchResult(ko,
+		func(i int) (string, error) {
+			return "84", nil
+		},
+		func(err error) (string, error) {
+			return "21", nil
+		},
+	)
+
+	fmt.Println(result.IsError(), result.OrEmpty(), result.Error())
+	// Output: false 21 <nil>
 }
 
 func ExampleResult_Match_ok() {
