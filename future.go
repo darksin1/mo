@@ -59,6 +59,34 @@ func (f *Future[T]) reject(err error) {
 	close(f.done)
 }
 
+// After executes cb after f *Future[T] is resolved, returns new *Future[R].
+func After[T any, R any](f *Future[T], cb func(T) (R, error)) *Future[R] {
+	n := &Future[R]{
+		cb: func(resolve func(R), reject func(error)) {
+			if f.result.IsError() {
+				reject(f.result.Error())
+				return
+			}
+			newValue, err := cb(f.result.MustGet())
+			if err != nil {
+				reject(err)
+				return
+			}
+			resolve(newValue)
+		},
+		cancelCb: func() {
+			f.Cancel()
+		},
+		done: make(chan struct{}),
+	}
+
+	go func() {
+		<-f.done
+		n.active()
+	}()
+	return n
+}
+
 // Then is called when Future is resolved. It returns a new Future.
 func (f *Future[T]) Then(cb func(T) (T, error)) *Future[T] {
 	f.mu.Lock()
@@ -124,6 +152,29 @@ func (f *Future[T]) Catch(cb func(error) (T, error)) *Future[T] {
 }
 
 // Finally is called when Future is processed either resolved or rejected. It returns a new Future.
+func Finally[T any, R any](f *Future[T], cb func(T, error) (R, error)) *Future[R] {
+	n := &Future[R]{
+		cb: func(resolve func(R), reject func(error)) {
+			newValue, err := cb(f.result.Get())
+			if err != nil {
+				reject(err)
+				return
+			}
+			resolve(newValue)
+		},
+		cancelCb: func() {
+			f.Cancel()
+		},
+		done: make(chan struct{}),
+	}
+
+	go func() {
+		<-f.done
+		n.active()
+	}()
+	return n
+}
+
 func (f *Future[T]) Finally(cb func(T, error) (T, error)) *Future[T] {
 	f.mu.Lock()
 	defer f.mu.Unlock()

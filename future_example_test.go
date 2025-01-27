@@ -74,6 +74,52 @@ func ExampleFuture_Result_reject() {
 	// failure
 }
 
+func ExampleAfter_resolve() {
+	f1 := NewFuture(func(resolve func(string), reject func(error)) {
+		resolve("foobar")
+	})
+	result := After(f1, func(s string) (int, error) {
+		return len(s), nil
+	}).Result()
+	fmt.Println(result.OrEmpty())
+	fmt.Println(result.Error())
+	// Output:
+	// 6
+	// <nil>
+}
+
+func ExampleAfter_reject() {
+	f1 := NewFuture(func(resolve func(string), reject func(error)) {
+		reject(fmt.Errorf("failure"))
+	})
+	result := After(f1, func(s string) (int, error) {
+		return 42, nil
+	}).Result()
+	fmt.Println(result.IsError())
+	fmt.Println(result.OrEmpty())
+	fmt.Println(result.Error())
+	// Output:
+	// true
+	// 0
+	// failure
+}
+
+func ExampleAfter_rejectAfter() {
+	f1 := NewFuture(func(resolve func(string), reject func(error)) {
+		resolve("foobar")
+	})
+	result := After(f1, func(s string) (int, error) {
+		return len(s), fmt.Errorf("failure")
+	}).Result()
+	fmt.Println(result.IsError())
+	fmt.Println(result.OrEmpty())
+	fmt.Println(result.Error())
+	// Output:
+	// true
+	// 0
+	// failure
+}
+
 func ExampleFuture_Then_resolve() {
 	result := NewFuture(func(resolve func(string), reject func(error)) {
 		resolve("foobar")
